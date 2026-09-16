@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { recentFavouriteDomains, withYouTube, isYouTube } from '../history.js';
+import { recentFavouriteDomains } from '../history.js';
 
 test('top domains count actual visits within the last 30 days, not lifetime counts', async () => {
   const now = Date.UTC(2026, 8, 16);
@@ -30,9 +30,12 @@ test('top domains count actual visits within the last 30 days, not lifetime coun
   ]);
 });
 
-test('YouTube is pinned once even when history already includes it', () => {
-  const links = withYouTube([{ name: 'Mobile YouTube', url: 'https://m.youtube.com/' }, { name: 'Example', url: 'https://example.com/' }]);
-  assert.equal(links.length, 2);
-  assert.equal(links[0].name, 'YouTube');
-  assert.equal(isYouTube(links[0].url), true);
+test('YouTube is ranked like any other visited domain', async () => {
+  const now = Date.UTC(2026, 8, 16);
+  const url = 'https://www.youtube.com/watch?v=example';
+  const api = {
+    search: async () => [{ url, lastVisitTime: now }],
+    getVisits: async () => [{ visitTime: now, transition: 'link' }]
+  };
+  assert.deepEqual(await recentFavouriteDomains(api, now), [{ name: 'Youtube', url: 'https://youtube.com/' }]);
 });

@@ -1,14 +1,3 @@
-export const YOUTUBE = { name: 'YouTube', url: 'https://www.youtube.com/' };
-
-export function isYouTube(url) {
-  try { return /^(www\.|m\.)?youtube\.com$/i.test(new URL(url).hostname); }
-  catch { return false; }
-}
-
-export function withYouTube(links) {
-  return [YOUTUBE, ...links.filter(link => !isYouTube(link.url))];
-}
-
 export function displayName(hostname) {
   return hostname.replace(/^www\./, '').split('.')[0].replace(/[-_]/g, ' ').replace(/^\w/, letter => letter.toUpperCase());
 }

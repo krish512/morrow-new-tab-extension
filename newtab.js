@@ -1,15 +1,16 @@
 import { readLocal, writeLocal, hasExtensionStorage } from './storage.js';
 import { initChat } from './chat.js';
 import { normalizeEndpoint, testConnection, requestLocalPermission, connectionError } from './ollama.js';
-import { YOUTUBE, isYouTube, withYouTube, recentFavouriteDomains } from './history.js';
+import { recentFavouriteDomains } from './history.js';
 import { searchDestination } from './navigation.js';
 import { openDialog, closeDialog } from './dialog-motion.js';
 import './panels.js';
 
+const YOUTUBE_DEFAULT = { name: 'YouTube', url: 'https://www.youtube.com/' };
 const DEFAULTS = {
   name: '', engine: 'google', theme: 'system', use24Hour: false, note: '',
   favouritesSeeded: false,
-  links: [YOUTUBE]
+  links: [YOUTUBE_DEFAULT]
 };
 const engines = {
   google: { label: 'Google', url: 'https://www.google.com/search?q=' },
@@ -63,7 +64,6 @@ function cleanState(saved = {}) {
   next.links = Array.isArray(next.links) ? next.links.filter(link => {
     try { return typeof link.name === 'string' && link.name.trim() && webAddress(link.url); } catch { return false; }
   }).map(link => ({ name: link.name.slice(0, 32), url: webAddress(link.url) })) : DEFAULTS.links;
-  next.links = withYouTube(next.links);
   next.favouritesSeeded = next.favouritesSeeded === true;
   return next;
 }
@@ -123,7 +123,7 @@ function renderLinks(focusIndex) {
   state.links.forEach((link, index) => {
     const item = document.createElement('li');
     item.className = 'link-card';
-    item.style.setProperty('--item-index', index);
+    item.style.setProperty('--item-delay', `${Math.min(index, 6) * 35}ms`);
     const anchor = document.createElement('a');
     anchor.className = 'quick-link';
     anchor.href = link.url;
@@ -157,14 +157,13 @@ function renderLinks(focusIndex) {
     title.textContent = link.name;
     anchor.append(initial, title);
     item.append(anchor);
-    if (!isYouTube(link.url)) {
-      const remove = document.createElement('button');
-      remove.className = 'icon-button remove-link';
-      remove.type = 'button';
-      remove.append(icon('close'));
-      remove.setAttribute('aria-label', `Remove ${link.name}`);
-      remove.title = `Remove ${link.name}`;
-      remove.addEventListener('click', async () => {
+    const remove = document.createElement('button');
+    remove.className = 'icon-button remove-link';
+    remove.type = 'button';
+    remove.append(icon('close'));
+    remove.setAttribute('aria-label', `Remove ${link.name}`);
+    remove.title = `Remove ${link.name}`;
+    remove.addEventListener('click', async () => {
       const oldLinks = state.links;
       remove.disabled = true;
       try {
@@ -180,9 +179,8 @@ function renderLinks(focusIndex) {
         remove.disabled = false;
         notify('Could not save the change. Please try again.');
       }
-      });
-      item.append(remove);
-    }
+    });
+    item.append(remove);
     list.append(item);
   });
   if (focusIndex !== undefined) (list.querySelectorAll('.quick-link')[focusIndex] || $('#add-link')).focus();
@@ -314,7 +312,6 @@ $('#link-form').addEventListener('submit', async event => {
     $('#link-url').reportValidity();
     return;
   }
-  if (isYouTube(url)) { void closeDialog($('#link-dialog')); notify('YouTube is already in favourites.'); return; }
   const submit = $('#link-form button[value="save"]');
   const oldLinks = state.links;
   submit.disabled = true;
@@ -370,18 +367,18 @@ async function seedFavourites() {
   if (state.favouritesSeeded) return;
   const startingRevision = linksRevision;
   const legacyDefaults = ['mail.google.com', 'calendar.google.com', 'drive.google.com'];
-  const custom = state.links.filter(link => !isYouTube(link.url));
-  const isOldDefault = custom.length === legacyDefaults.length &&
-    custom.every((link, index) => new URL(link.url).hostname === legacyDefaults[index]);
+  const isOldDefault = state.links.length === legacyDefaults.length + 1 &&
+    state.links[0].url === YOUTUBE_DEFAULT.url &&
+    state.links.slice(1).every((link, index) => new URL(link.url).hostname === legacyDefaults[index]);
   let suggested = [];
   try { suggested = await recentFavouriteDomains(globalThis.chrome?.history); }
   catch { notify('Recent sites could not be loaded. You can still add favourites.'); }
   if (linksRevision !== startingRevision) return;
-  const base = isOldDefault && suggested.length ? [] : custom;
+  const base = isOldDefault && suggested.length ? [YOUTUBE_DEFAULT] : state.links;
   const hosts = new Set(base.map(link => new URL(link.url).hostname.replace(/^www\./, '')));
-  const newLinks = suggested.filter(link => !isYouTube(link.url) && !hosts.has(new URL(link.url).hostname));
+  const newLinks = suggested.filter(link => !hosts.has(new URL(link.url).hostname.replace(/^www\./, '')));
   try {
-    await persist({ links: withYouTube([...base, ...newLinks]), favouritesSeeded: true });
+    await persist({ links: [...base, ...newLinks], favouritesSeeded: true });
     renderLinks();
   } catch { notify('Could not save suggested favourites. You can try again on the next tab.'); }
 }

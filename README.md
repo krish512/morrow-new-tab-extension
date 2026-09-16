@@ -15,14 +15,15 @@ A dependency-free Manifest V3 extension that replaces the new-tab page with a ca
 
 - Search via Google, DuckDuckGo, or Bing
 - Compact favourite cards, using the exact SVG clip paths in `card.svg`
-- Five favourite domains suggested from actual visits in the last 30 days on first setup, plus a pinned YouTube tile
+- Five favourite domains suggested from actual visits in the last 30 days on first setup; YouTube starts as a removable default
 - Site favicons, with Chrome's cached favicon as a fallback
 - A left-side Notes panel with saving, Clear note, and Undo
 - A responsive layout that uses the full window with comfortable margins
 - Name, light/Dusk/system appearance, and a live 12/24-hour clock
 - A right-side chat panel with model selection, streamed replies, Stop, and new chat
-- Keyboard-first interactions: use `/` to focus search and `Cmd/Ctrl + ,` to open settings
-- Visible focus states and `prefers-reduced-motion` support
+- Keyboard-first interactions: search is focused on load, `/` refocuses it, and `Cmd/Ctrl + ,` opens settings
+- Web addresses entered in search open directly; other text uses the selected search engine
+- Subtle page and panel transitions, visible keyboard focus on controls, and `prefers-reduced-motion` support
 
 After changing extension files, click **Reload** on the extensions page and open a new tab. The new history and favicon permissions may require accepting an updated browser permission prompt. No build step or runtime dependencies are required.
 
@@ -65,13 +66,13 @@ On first setup, Morrow reads local browser history for the last 30 days and save
 
 ## Development checks
 
-Run the protocol regression tests with Node.js 22 or later:
+Run the regression tests with Node.js 22 or later:
 
 ```sh
 npm test
 ```
 
-No package installation is needed for these tests. They cover endpoint validation, 30-day favourite ranking, model and chat access, fragmented streams, Unicode, incomplete/error replies, and cancellation. To preview the interface outside the extension, serve this directory over local HTTP; it will use localStorage. Browser-extension permissions must be verified in a loaded extension.
+No package installation is needed for these tests. They cover endpoint validation, URL-or-search routing, 30-day favourite ranking, model and chat access, fragmented streams, Unicode, incomplete/error replies, and cancellation. To preview the interface outside the extension, serve this directory over local HTTP; it will use localStorage. Browser-extension permissions must be verified in a loaded extension.
 
 ## Browser behavior
 
