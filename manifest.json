@@ -1,0 +1,16 @@
+{
+  "manifest_version": 3,
+  "name": "Morrow — New Tab",
+  "version": "1.0.0",
+  "description": "A calm, customizable new-tab page for Chromium browsers.",
+  "permissions": ["storage", "history", "favicon"],
+  "optional_host_permissions": [
+    "http://localhost/*",
+    "http://127.0.0.1/*",
+    "https://localhost/*",
+    "https://127.0.0.1/*"
+  ],
+  "chrome_url_overrides": {
+    "newtab": "newtab.html"
+  }
+}
